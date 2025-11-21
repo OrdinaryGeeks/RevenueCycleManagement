@@ -1,3 +1,4 @@
+import { Card, Typography } from "@mui/material";
 import type Service from "../classes/Service";
 
 
@@ -10,10 +11,11 @@ interface DisplayServiceProps {
 export default function DisplayService(props: DisplayServiceProps) {
 
     return(
-<>
-                  <div>{props.service.serviceName}</div>
-          <div>{props.service.serviceCost}</div> 
+<Card sx={{backgroundColor: 'red', padding: '10px', marginBottom: '10px'}} onClick={props.handleClick}>
 
-</>
+                  <Typography variant="h6">{props.service.serviceName}</Typography>
+          <Typography variant="h6">{props.service.serviceCost}</Typography> 
+
+</Card>
     )
 }
