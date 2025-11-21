@@ -48,7 +48,7 @@ const [amount, setAmountToPay] = useState<number>(0);
                   <Select value={payerSelected} onChange={changeSelectPayer}>
                     <MenuItem key="Insurance" value="Insurance">Insurance</MenuItem>
                     <MenuItem key="Patient" value="Patient">Patient</MenuItem>
-                    <MenuItem key="Other" value="Other">Other</MenuItem>
+                   
                   </Select>
                   
                     <Select value={paymentSelected} onChange={(event)=>changeSelectPayment(event)}>
@@ -56,7 +56,7 @@ const [amount, setAmountToPay] = useState<number>(0);
                             Full owed by payer
                         </MenuItem>
                         <MenuItem key="Partial owed by payer" value="Partial owed by payer">Partial owed by payer</MenuItem>
-                        <MenuItem key="Other" value="Other">Other</MenuItem>
+                       
                     </Select>
                     {paymentSelected != "Full owed by payer" && <input type="number" onChange={(e) => setAmountToPay(Number.parseFloat(e.currentTarget.value))}></input>}
 
