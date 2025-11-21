@@ -19,7 +19,12 @@ import DisplayBill from "./DisplayBill"
 import AddService from "./AddService"
 import DisplayService from "./DisplayService"
 import DisplayPayment from "./DisplayPayment"
+import { LineChart } from "@mui/x-charts"
 
+interface PaymentOrServiceByDate{
+        date: Date;
+        amount?: number;
+    }
  const RevenueCycleManagement : React.FC= () => {
 
     const [currentPatientId, setCurrentPatientId] = useState(0);
@@ -36,6 +41,8 @@ import DisplayPayment from "./DisplayPayment"
     
     const [paymentDate, setPaymentDate] = useState<Date | null>(null);
 
+    const [xLabels, setXLabels ] = useState<number[]>([]);
+    const [serviceOrPaymentByDate, setServiceOrPaymentByDate] = useState<{date: Date; amount?: number;}[]>([]);
     const handleChange = (newValue: Dayjs | null) => {
         alert(newValue?.toString());
         setPaymentDate(newValue ? newValue.toDate() : null);
@@ -220,7 +227,9 @@ lastName: 'Arie'
 
     }
 
-
+  
+    const [payments, setPayments] =useState< Payment[]>([]);
+    
     const [services, setServices] = useState<Service[]>([]);
     const [bills, setBills] = useState<Bill[]>([]);
     const [patients, setPatients] = useState<Patient[]>([]);
@@ -245,12 +254,15 @@ lastName: 'Arie'
         setPatientsToDisplay(filteredPatients);
     }, [firstNameToSearch, lastNameToSearch]);
        
+    useEffect(() => {
+
+        if(services.length > 0 || payments.length > 0)
+        SetupServiceAndPaymentsByDate();
+    }, [services, payments]);
 
         
     //setPatientsToDisplay(filteredPatients);
-    
-    const [payments, setPayments] =useState< Payment[]>([]);
-    
+  
 
     const ProcessInsurancePayment = (serviceId:number, type:string)=>{
 
@@ -301,6 +313,51 @@ setPayments(c => [...c, currentPayment]);
 
             
         setServices(c => [...c, { serviceId: service?.serviceId || 0, medicalProfessionalId: medicalProfessional?.medicalProfessionalId || 0, patientId: currentPatientId, serviceName: serviceName, serviceCost: service?.serviceCost || 0, billId: currentBillId, date: paymentDate || new Date(Date.now()), serviceType: service?.serviceType || ""}]);
+
+
+    }
+
+    
+    const SetupServiceAndPaymentsByDate = () => {
+debugger;
+        let paymentOrServiceByDate:PaymentOrServiceByDate[] = [];
+        services.filter((service) => service.patientId == currentPatientId).map((service) => {
+
+debugger;
+            paymentOrServiceByDate.push({   date: service.date, amount: service.serviceCost});
+        });
+
+        payments.filter((payment) => payment.patientId == currentPatientId).map((payment) => {
+
+            paymentOrServiceByDate.push({ date: payment.date, amount: -payment.amount});
+        });
+
+        paymentOrServiceByDate.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        let balanceByDate :PaymentOrServiceByDate[] = [];
+
+        paymentOrServiceByDate.reduce((accumulator, currentValue) => {
+
+            let newBalance = accumulator + (currentValue.amount || 0);
+            balanceByDate.push( { date: currentValue.date, amount: newBalance});
+            return newBalance;
+
+        }, 0);
+
+        setServiceOrPaymentByDate(balanceByDate);
+      
+        paymentOrServiceByDate.sort((a,b) => (a.amount || 0) - (b.amount || 0));
+
+let difference = 0;
+        if(paymentOrServiceByDate.length > 0)
+         difference = paymentOrServiceByDate[paymentOrServiceByDate.length -1].amount || 0 - (paymentOrServiceByDate[0].amount || 0);
+
+          if(paymentOrServiceByDate.length > 0)
+        for(let i = paymentOrServiceByDate[0].amount ||0; i <= (paymentOrServiceByDate[0].amount || 0) + difference; i += difference / 10)
+        setXLabels( xLabels => [...xLabels, i]);
+        
+
+
 
 
     }
@@ -518,19 +575,18 @@ setPayments(c => [...c, currentPayment]);
 
     
 
-{/*
+
 <LineChart
   series={[
-    { data: pData, label: 'pv', yAxisId: 'leftAxisId' },
-    { data: uData, label: 'uv', yAxisId: 'rightAxisId' },
+    { data: serviceOrPaymentByDate.map(item => {return (Date.now() - item.date.getTime())/(1000/60/60/24)}), label: 'Time Of Balance', yAxisId: 'leftAxisId' },
+   
   ]}
   xAxis={[{ scaleType: 'point', data: xLabels }]}
   yAxis={[
     { id: 'leftAxisId', width: 50 },
-    { id: 'rightAxisId', position: 'right' },
   ]}
 />
-*/}
+
 
     </>
     )
