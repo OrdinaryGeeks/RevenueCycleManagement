@@ -8,7 +8,6 @@ import type Service from "../classes/Service"
 import type Bill from "../classes/Bill"
 import type Payment from "../classes/Payment"
 import { useEffect, useMemo, useState } from "react"
-import DisplayPatient from "./DisplayPatient"
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
