@@ -1,33 +1,45 @@
 
-import type Hospital from "../classes/Hospital"
+//import type Hospital from "../classes/Hospital"
 import type Patient from "../classes/Patient"
-import type Employer from "../classes/Employer"
+//import type Employer from "../classes/Employer"
 import type Insurance from "../classes/Insurance"
 import type MedicalProfessional from "../classes/MedicalProfessional"
 import type Service from "../classes/Service"
 import type Bill from "../classes/Bill"
 import type Payment from "../classes/Payment"
-import { useCallback, useMemo, useState, type ChangeEvent } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import DisplayPatient from "./DisplayPatient"
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+//import { LineChart } from "@mui/x-charts"
+import dayjs from "dayjs"
+import type { Dayjs } from 'dayjs'
+import DisplayBill from "./DisplayBill"
+import AddService from "./AddService"
+import DisplayService from "./DisplayService"
+import DisplayPayment from "./DisplayPayment"
 
  const RevenueCycleManagement : React.FC= () => {
 
     const [currentPatientId, setCurrentPatientId] = useState(0);
-
+    const [currentBillId, setCurrentBillId] = useState(0);
+    //const [currentServiceId, setCurrentServiceId] = useState(0);
     const [amountToPay, setAmountToPay] = useState(0);
 
-    const [currentInsuranceId, setCurrentInsuranceId] = useState(0);
-   
-    let Hospital : Hospital ={
-        hospitalId : 1,
-        streetAddress : '130 Park Street',
-        city: 'Memphis',
-        state: 'TN',
-        zip: "38130"    
+    const [firstNameToSearch, setFirstNameToSearch] = useState("");
+    const [lastNameToSearch, setLastNameToSearch] = useState("");
 
+    const [patientsToDisplay, setPatientsToDisplay] = useState<Patient[]>([]);
 
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    
+    const [paymentDate, setPaymentDate] = useState<Date | null>(null);
+
+    const handleChange = (newValue: Dayjs | null) => {
+        alert(newValue?.toString());
+        setPaymentDate(newValue ? newValue.toDate() : null);
     }
-
     let Patient2: Patient = {
         patientId: 2,
         firstName: 'Corey',
@@ -50,6 +62,18 @@ import DisplayPatient from "./DisplayPatient"
          
     }
 
+    //const [currentInsuranceId, setCurrentInsuranceId] = useState(0);
+   
+   /* let Hospital : Hospital ={
+        hospitalId : 1,
+        streetAddress : '130 Park Street',
+        city: 'Memphis',
+        state: 'TN',
+        zip: "38130"    
+
+
+    }*/
+
     
     const GetFullNameOfPatient= (patientId :number) =>{
 
@@ -61,14 +85,22 @@ import DisplayPatient from "./DisplayPatient"
 
         return patients.find(patient => patient.patientId == patientId);
     }
-    let Employer : Employer = {
+   /* let Employer : Employer = {
         employerId : 1,
         streetAddress : '103 Boca Raton',
         city : 'Miami',
         state: 'FL',
         zip: '12121'
-    }
+    }*/
 
+
+       
+
+
+
+
+
+        
     let Insurance2 : Insurance = {
 
         insuranceName  :"Aflac",
@@ -102,7 +134,7 @@ treatment: 90
 
     }
 
-    let insurances = [Insurance, Insurance2];
+    //let insurances = [Insurance, Insurance2];
 
     let MedicalProfessional: MedicalProfessional = {
 
@@ -188,16 +220,46 @@ lastName: 'Arie'
 
     }
 
+
+    const [services, setServices] = useState<Service[]>([]);
+    const [bills, setBills] = useState<Bill[]>([]);
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [insurances, setInsurances] = useState<Insurance[]>([]);
+    const [medicalProfessionals, setMedicalProfessionals] = useState<MedicalProfessional[]>([]);
+    useEffect(() => {
+ setServices([Service1, Service2, Service3, Service4]);
+ 
+     setBills([Bill, Bill2]);
+     setPatients([Patient, Patient2]);
+   
+     setInsurances([Insurance, Insurance2]);
+     setMedicalProfessionals([MedicalProfessional, MedicalProfessional2]);
+    },[]);
+    useEffect(() => {
+    
+        let filteredPatients = patients.filter((patient) => 
+            patient.firstName.toLowerCase().includes(firstNameToSearch.toLowerCase()) &&
+            patient.lastName.toLowerCase().includes(lastNameToSearch.toLowerCase())
+        );
+
+        setPatientsToDisplay(filteredPatients);
+    }, [firstNameToSearch, lastNameToSearch]);
+       
+
+        
+    //setPatientsToDisplay(filteredPatients);
     
     const [payments, setPayments] =useState< Payment[]>([]);
     
 
     const ProcessInsurancePayment = (serviceId:number, type:string)=>{
 
+
+    
       let currentService =  services.find((service) => service.serviceId == serviceId);
       let currentInsurance = insurances.find((insurance) => insurance.patientId == currentPatientId);
 
-      let currentPayment :Payment={ patientId: currentService?.patientId || 0, amount:0,  paymentId:0, originatorType:1, originatorId:currentInsurance?.insuranceId || 0, date: new Date(Date.now()), serviceId:serviceId};
+      let currentPayment :Payment={ patientId: currentService?.patientId || 0, amount:0,  paymentId:0, originatorType:1, originatorId:currentInsurance?.insuranceId || 0,date: paymentDate || new Date(Date.now()), serviceId:serviceId};
 
       
      console.log(currentService);
@@ -230,12 +292,24 @@ setPayments(c => [...c, currentPayment]);
 
 
     }
+
+    
+    const onAddService= (serviceName: string, medicalProfessionalName: string)  => {
+
+        let medicalProfessional = medicalProfessionals.find((mp) => (mp.firstName + " " + mp.lastName) == medicalProfessionalName);
+        let service = services.find((s) => s.serviceName == serviceName);
+
+            
+        setServices(c => [...c, { serviceId: service?.serviceId || 0, medicalProfessionalId: medicalProfessional?.medicalProfessionalId || 0, patientId: currentPatientId, serviceName: serviceName, serviceCost: service?.serviceCost || 0, billId: currentBillId, date: paymentDate || new Date(Date.now()), serviceType: service?.serviceType || ""}]);
+
+
+    }
     const ProcessPatientPayment = (serviceId:number, type:string) => {
 
   let currentService =  services.find((service) => service.serviceId == serviceId);
       let currentInsurance = insurances.find((insurance) => insurance.patientId == currentPatientId);
 
-      let currentPayment :Payment={ patientId : currentService?.patientId || 0,amount:0,  paymentId:0, originatorType:2, originatorId:currentPatientId || 0, date: new Date(Date.now()), serviceId:serviceId};
+      let currentPayment :Payment={ patientId : currentService?.patientId || 0,amount:0,  paymentId:0, originatorType:2, originatorId:currentPatientId || 0, date: paymentDate || new Date(Date.now()), serviceId:serviceId};
 
       
      console.log(currentService);
@@ -275,7 +349,7 @@ setPayments(c => [...c, currentPayment]);
             if(paymentSelected=="Full owed by payer")
             {
                 
-            let currentBill = bills.find((bill) => bill.billId);
+          //  let currentBill = bills.find((bill) => bill.billId);
 
             services.filter((service) => service.billId == billId && service.serviceId == serviceId)
             {
@@ -294,7 +368,7 @@ setPayments(c => [...c, currentPayment]);
             if(paymentSelected=="Full owed by payer")
             {
                 
-            let currentBill = bills.find((bill) => bill.billId);
+          //  let currentBill = bills.find((bill) => bill.billId);
 
             services.filter((service) => service.billId == billId && service.serviceId == serviceId)
             {
@@ -317,11 +391,6 @@ setPayments(c => [...c, currentPayment]);
     const [payerSelected, setPayerSelected] = useState<string>("Insurance");
     const [paymentSelected, setPaymentSelected] = useState<string>("Full owed by payer");
 
-    let bills = [Bill, Bill2];
-    let patients = [Patient, Patient2];
-    let services = [Service1, Service2, Service3, Service4];
-
-
      let totalCost = useMemo(() =>
         services.filter((service) => service.patientId == currentPatientId).reduce((accumulator, currentValue) => accumulator +  currentValue.serviceCost, 0)
     , [services, currentPatientId])
@@ -332,7 +401,7 @@ setPayments(c => [...c, currentPayment]);
     )
 
        
-     let handleClick = useCallback((patientId : number) => setCurrentPatientId(patientId), [currentPatientId]);
+     let handleClick = useCallback((patientId : number) => {setCurrentPatientId(patientId)}, [currentPatientId]);
      
 
           const changeSelectPayer = (event: React.FormEvent<HTMLSelectElement>) => {
@@ -346,6 +415,8 @@ setPayments(c => [...c, currentPayment]);
         setPaymentSelected(event.currentTarget.value);
 
      }
+
+
     return (
 
 
@@ -354,19 +425,21 @@ setPayments(c => [...c, currentPayment]);
             Welcome to Nates Revenue Cycle Management
         </div>
         
+      <input onChange={(e) => setFirstNameToSearch(e.currentTarget.value)} />
+      <input onChange={(e) => setLastNameToSearch(e.currentTarget.value)} />
         <div>
         Look Up Bills By Patient Name
 
         </div>
 
-        {bills.map(bill => 
-        (
 
-            <DisplayPatient patientId={bill.patientId} handleClick={() =>handleClick(bill.patientId)} getPatientById={() =>GetPatientById(bill.patientId)}/>
-        )
+       {  patientsToDisplay.map((patient) => (
 
 
-    )}
+           <DisplayPatient patientId={patient.patientId} handleClick={() =>handleClick(patient.patientId)} getPatientById={() =>GetPatientById(patient.patientId)}/>
+        ))
+    }
+ 
         
         <div>Services for {GetFullNameOfPatient(currentPatientId)}</div>
         
@@ -374,31 +447,40 @@ setPayments(c => [...c, currentPayment]);
         {totalCost > 0 && (<><div>{totalCost} {" bill total"}</div><div>
             {totalCost - totalPayments} owed</div></>)}
 
-{currentPatientId} 
-    {bills.filter((bill) => bill.patientId == currentPatientId)
-     .map((bill) => ( bill.patientId == currentPatientId &&
-                <>
-                <div>{bill.patientId}</div>
-                <div>{bill.billId} is billId</div>
-                <div>{bill.date.toDateString()} is the date the bill was created</div>
-                </>
-     
+
+    
+         {
+    bills.filter(
+        (bill) => bill.patientId == currentPatientId)
+
+ .map((bill) => (
+
+    <DisplayBill bill={bill} handleClick={()=> setCurrentBillId(bill.billId)}/>
+ ))
+}
+{
          
-        && services.filter((service) => service.billId == bill.billId).map((service) => (
+ bills.filter((bill) => bill.billId == currentBillId).map((bill) => (
+         services.filter((service) => service.billId == bill.billId).map((service) => (
           
             service.patientId == currentPatientId &&
                   <>
-          <div>{service.serviceName}</div>
-          <div>{service.serviceCost}</div> 
+
+                  <DisplayService service={service} />
+     
 
           {payments.filter((payment) => payment.serviceId === service.serviceId).map((payment) => (
 
 
 <>
 {payment.serviceId}{" "}{service.serviceId}
-<div>{(payment.serviceId == service.serviceId && (<>{payment.amount}  amount Paid on {payment.date.toDateString()} by {payment.originatorType == 2 &&  GetFullNameOfPatient(patients.filter((patient) => patient.patientId == payment.originatorId)[0].patientId)}{payment.originatorType == 1 && insurances.filter((insurance) => insurance.insuranceId == payment.originatorId)[0].insuranceName}</>))}</div>
+
+{payment.originatorType== 2 && <DisplayPayment payment={payment} payerName={GetFullNameOfPatient(patients.filter((patient) => patient.patientId == payment.originatorId)[0].patientId)} />}
+    {payment.originatorType== 1 && <DisplayPayment payment={payment} payerName={(insurances.filter((insurance) => insurance.insuranceId == payment.originatorId)[0].insuranceName)} />}
 </>
             ))}
+
+<button onClick={() => setShowDatePicker(!showDatePicker)}>Select Payment Date</button>
 
 <button onClick={() =>AcceptPayment(bill.billId, service.serviceId)}>Accept Payment</button>
           <select onChange={(event) => changeSelectPayer(event)}>
@@ -418,12 +500,37 @@ setPayments(c => [...c, currentPayment]);
             </>
          
         ))
+    )
         
         
    )
-     )
- }
+   
 
+     
+    
+     
+ }
+{showDatePicker && <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <DateCalendar sx={{ backgroundColor: 'gray' }} value={paymentDate ? dayjs(paymentDate) : null} onChange={handleChange} />
+</LocalizationProvider>}
+
+<AddService billId={currentBillId} services={[Service1, Service2]} medicalProfessionals={medicalProfessionals} onAddService={onAddService}/>
+
+    
+
+{/*
+<LineChart
+  series={[
+    { data: pData, label: 'pv', yAxisId: 'leftAxisId' },
+    { data: uData, label: 'uv', yAxisId: 'rightAxisId' },
+  ]}
+  xAxis={[{ scaleType: 'point', data: xLabels }]}
+  yAxis={[
+    { id: 'leftAxisId', width: 50 },
+    { id: 'rightAxisId', position: 'right' },
+  ]}
+/>
+*/}
 
     </>
     )
