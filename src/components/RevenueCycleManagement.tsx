@@ -7,7 +7,7 @@ import type MedicalProfessional from "../classes/MedicalProfessional"
 import type Service from "../classes/Service"
 import type Bill from "../classes/Bill"
 import type Payment from "../classes/Payment"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import DisplayPatient from "./DisplayPatient"
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -20,19 +20,19 @@ import AddService from "./AddService"
 import DisplayService from "./DisplayService"
 import DisplayPayment from "./DisplayPayment"
 import { LineChart } from "@mui/x-charts"
-import { Button, Card, Input, MenuItem, Select, TextField, Typography } from "@mui/material"
+import { Button, Card, MenuItem, Select, TextField, Typography } from "@mui/material"
 import AddPayment from "./AddPayment"
 
 interface PaymentOrServiceByDate{
-        date: Date;
-        amount?: number;
-    }
- const RevenueCycleManagement : React.FC= () => {
+    date: Date;
+    amount?: number;
+}
 
-    const [currentPatientId, setCurrentPatientId] = useState(0);
-    const [currentBillId, setCurrentBillId] = useState(0);
+const RevenueCycleManagement: React.FC = () => {
     //const [currentServiceId, setCurrentServiceId] = useState(0);
   
+    const [currentPatientId, setCurrentPatientId] = useState(0);
+    const [currentBillId, setCurrentBillId] = useState(0);
 
     const [firstNameToSearch, setFirstNameToSearch] = useState("");
     const [lastNameToSearch, setLastNameToSearch] = useState("");
@@ -43,8 +43,13 @@ interface PaymentOrServiceByDate{
     
     const [paymentDate, setPaymentDate] = useState<Date | null>(null);
 
-    const [xLabels, setXLabels ] = useState<number[]>([]);
+    
     const [serviceOrPaymentByDate, setServiceOrPaymentByDate] = useState<{date: Date; amount?: number;}[]>([]);
+    // chartStartDate and chartDaysSpan removed (not read); chartXLabels/chartSeriesData used instead
+    const [chartYMin, setChartYMin] = useState<number | undefined>(undefined);
+    const [chartYMax, setChartYMax] = useState<number | undefined>(undefined);
+    const [chartXLabels, setChartXLabels] = useState<string[]>([]);
+    const [chartSeriesData, setChartSeriesData] = useState<number[]>([]);
     const handleChange = (newValue: Dayjs | null) => {
         
         setShowDatePicker(false);
@@ -91,10 +96,7 @@ interface PaymentOrServiceByDate{
        return patient?.firstName + " " + patient?.lastName;
     }
 
-    const GetPatientById = (patientId : number) => {
-
-        return patients.find(patient => patient.patientId == patientId);
-    }
+    // helper removed: GetPatientById is unused
    /* let Employer : Employer = {
         employerId : 1,
         streetAddress : '103 Boca Raton',
@@ -364,8 +366,53 @@ setPayments(c => [...c, currentPayment]);
         }, 0);
 
         console.log(balanceByDate, "Balance By Date");
+
         setServiceOrPaymentByDate(balanceByDate);
-      
+
+        // compute date span from first raw event (service or payment) to last
+        // compute date span from first raw event (service or payment) to last (used locally below)
+        // no persistent chartStartDate/chartDaysSpan state required here
+
+        // compute Y axis min/max from the balanceByDate amounts
+        if (balanceByDate.length > 0) {
+            const amounts = balanceByDate.map((b) => b.amount || 0);
+            let minAmount = Math.min(...amounts);
+            let maxAmount = Math.max(...amounts);
+            // ensure some vertical range if all values equal
+            if (minAmount === maxAmount) {
+                minAmount = minAmount - 1;
+                maxAmount = maxAmount + 1;
+            }
+            setChartYMin(minAmount);
+            setChartYMax(maxAmount);
+        } else {
+            setChartYMin(undefined);
+            setChartYMax(undefined);
+        }
+
+        // Build X labels (dates) spanning from chartStartDate for chartDaysSpan days
+        if (paymentOrServiceByDate.length > 0) {
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const firstDate = paymentOrServiceByDate[0].date;
+            const spanDays = Math.max(5, Math.ceil(((paymentOrServiceByDate[paymentOrServiceByDate.length - 1].date.getTime() - firstDate.getTime()) / msPerDay) || 0));
+            const labels: string[] = [];
+            const seriesVals: number[] = [];
+            for (let d = 0; d <= spanDays; d++) {
+                const day = new Date(firstDate.getTime() + d * msPerDay);
+                labels.push(day.toLocaleDateString());
+                // find last balance on or before this day
+                const bal = balanceByDate
+                    .filter(b => b.date.getTime() <= day.getTime())
+                    .slice(-1)[0];
+                seriesVals.push(bal ? (bal.amount || 0) : 0);
+            }
+            setChartXLabels(labels);
+            setChartSeriesData(seriesVals);
+        } else {
+            setChartXLabels([]);
+            setChartSeriesData([]);
+        }
+
         serviceOrPaymentByDate.sort((a,b) => (a.amount || 0) - (b.amount || 0));
 
         console.log(serviceOrPaymentByDate, "Sorted Service Or Payment By Date");
@@ -376,9 +423,9 @@ let difference = 0;
             console.log("Difference: " + difference);
         }
         console.log(serviceOrPaymentByDate, "Service Or Payment By Date");
-          if(serviceOrPaymentByDate.length > 0)
-        for(let i = serviceOrPaymentByDate[0].amount ||0; i <= (serviceOrPaymentByDate[0].amount || 0) + difference; i += difference / 10)
-        setXLabels( xLabels => [...xLabels, i]);
+                    if(serviceOrPaymentByDate.length > 0) {
+                        // xLabels are no longer used; series x values use actual dates
+                    }
         
 
 
@@ -475,10 +522,9 @@ setPayments(c => [...c, currentPayment]);
 
 
     useEffect(() => {
-
         setPayerSelected("Full owed by payer");
         setPaymentSelected("Insurance");
-    }),[];
+    }, []);
      let totalCost = useMemo(() =>
         services.filter((service) => service.patientId == currentPatientId).reduce((accumulator, currentValue) => accumulator +  currentValue.serviceCost, 0)
     , [services, currentPatientId])
@@ -489,7 +535,7 @@ setPayments(c => [...c, currentPayment]);
     )
 
        
-     let handleClick = useCallback((patientId : number) => {setCurrentPatientId(patientId)}, [currentPatientId]);
+    // inline patient selection used via SetPatientId; remove unused handleClick
      
 
        
@@ -595,17 +641,17 @@ setPayments(c => [...c, currentPayment]);
 
     
 
-
+<Card sx={{backgroundColor: 'lightgreen', padding: '10px', marginBottom: '20px'}}>
 <LineChart
-  series={[
-    { data: serviceOrPaymentByDate.map(item => {return (Date.now() - item.date.getTime())/(1000/60/60/24)}), label: 'Time Of Balance', yAxisId: 'leftAxisId' },
-   
-  ]}
-  xAxis={[{ scaleType: 'point', data: xLabels }]}
-  yAxis={[
-    { id: 'leftAxisId', width: 50 },
-  ]}
-/>
+    series={[
+        { data: chartSeriesData, label: 'Amount Owed', yAxisId: 'leftAxisId' },
+    ]}
+    xAxis={[{ scaleType: 'point', data: chartXLabels }]}
+    yAxis={[
+        { id: 'leftAxisId', width: 80, min: chartYMin, max: chartYMax },
+    ]}
+/> 
+</Card>
 
 
     </>
