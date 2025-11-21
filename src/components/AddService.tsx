@@ -1,4 +1,4 @@
-import { Button, Select, MenuItem } from "@mui/material";
+import { Button, Select, MenuItem, Card } from "@mui/material";
 import type Service from "../classes/Service";
 import type MedicalProfessional from "../classes/MedicalProfessional";
 
@@ -30,26 +30,27 @@ export default function AddService (props: AddServiceProps) {
         }
         const setService = (event: any) => {
             
+            console.log(event);
             setSelectedService(event.target.value);
         }
 
     return(
 
-        <div>
+        <Card sx={{backgroundColor: 'orange', padding: '10px', marginBottom: '10px'}}>
 
             <Select value={selectedService} onChange={setService}>
                 {props.services.map((service) => (
                     <MenuItem key={service.serviceId} value={service.serviceName}>{service.serviceName}</MenuItem>
                 ))}
             </Select>
-            <Select value={selectedMedicalProfessional} onChange={(event) => setMedicalProfessional(event)}>
+            <Select value={selectedMedicalProfessional} onChange={setMedicalProfessional}>
                 {props.medicalProfessionals.map((mp) => (
                     <MenuItem key={mp.medicalProfessionalId} value={mp.firstName + " " + mp.lastName}>{mp.firstName + " " + mp.lastName}</MenuItem>
                 ))}
 
             </Select>
             <Button variant="contained" color="primary" onClick={AddServiceToBill}>Add Service By Professional</Button>
-        </div>
+        </Card>
 
     )
 
