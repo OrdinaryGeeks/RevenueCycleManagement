@@ -567,7 +567,7 @@ setPayments(c => [...c, currentPayment]);
         
 
 
-<Typography variant="h6">{GetFullNameOfPatient(currentPatientId)}</Typography>
+{currentPatientId > 0 && <Typography variant="h6">{GetFullNameOfPatient(currentPatientId)}</Typography>}
  
         
            {
