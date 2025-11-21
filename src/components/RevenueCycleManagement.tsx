@@ -20,6 +20,7 @@ import AddService from "./AddService"
 import DisplayService from "./DisplayService"
 import DisplayPayment from "./DisplayPayment"
 import { LineChart } from "@mui/x-charts"
+import { Card, Input, TextField } from "@mui/material"
 
 interface PaymentOrServiceByDate{
         date: Date;
@@ -243,6 +244,7 @@ lastName: 'Arie'
    
      setInsurances([Insurance, Insurance2]);
      setMedicalProfessionals([MedicalProfessional, MedicalProfessional2]);
+     SetupServiceAndPaymentsByDate();
     },[]);
     useEffect(() => {
     
@@ -258,7 +260,7 @@ lastName: 'Arie'
 
         if(services.length > 0 || payments.length > 0)
         SetupServiceAndPaymentsByDate();
-    }, [services, payments]);
+    }, [services, payments, currentPatientId]);
 
         
     //setPatientsToDisplay(filteredPatients);
@@ -319,16 +321,17 @@ setPayments(c => [...c, currentPayment]);
 
     
     const SetupServiceAndPaymentsByDate = () => {
-debugger;
+
         let paymentOrServiceByDate:PaymentOrServiceByDate[] = [];
         services.filter((service) => service.patientId == currentPatientId).map((service) => {
 
-debugger;
+            console.log("Service on date " + service.date.toDateString() + " for amount " + service.serviceCost);
             paymentOrServiceByDate.push({   date: service.date, amount: service.serviceCost});
         });
 
         payments.filter((payment) => payment.patientId == currentPatientId).map((payment) => {
 
+            console.log("Payment on date " + payment.date.toDateString() + " for amount " + payment.amount);
             paymentOrServiceByDate.push({ date: payment.date, amount: -payment.amount});
         });
 
@@ -339,21 +342,36 @@ debugger;
         paymentOrServiceByDate.reduce((accumulator, currentValue) => {
 
             let newBalance = accumulator + (currentValue.amount || 0);
+            console.log("New Balance: " + newBalance + " on date " + currentValue.date.toDateString());
+
+            const balIndex = balanceByDate.findIndex((item) => item.date.toDateString() == currentValue.date.toDateString());
+            
+            console.log(balIndex, "BalIndex");
+            if(balIndex >= 0)
+            {
+                balanceByDate[balIndex].amount = newBalance;
+
+            }
+            else
             balanceByDate.push( { date: currentValue.date, amount: newBalance});
             return newBalance;
 
         }, 0);
 
+        console.log(balanceByDate, "Balance By Date");
         setServiceOrPaymentByDate(balanceByDate);
       
-        paymentOrServiceByDate.sort((a,b) => (a.amount || 0) - (b.amount || 0));
+        serviceOrPaymentByDate.sort((a,b) => (a.amount || 0) - (b.amount || 0));
 
 let difference = 0;
-        if(paymentOrServiceByDate.length > 0)
-         difference = paymentOrServiceByDate[paymentOrServiceByDate.length -1].amount || 0 - (paymentOrServiceByDate[0].amount || 0);
-
-          if(paymentOrServiceByDate.length > 0)
-        for(let i = paymentOrServiceByDate[0].amount ||0; i <= (paymentOrServiceByDate[0].amount || 0) + difference; i += difference / 10)
+        if(serviceOrPaymentByDate.length > 0)
+        {
+         difference = serviceOrPaymentByDate[serviceOrPaymentByDate.length -1].amount || 0 - (serviceOrPaymentByDate[0].amount || 0);
+            console.log("Difference: " + difference);
+        }
+        console.log(serviceOrPaymentByDate, "Service Or Payment By Date");
+          if(serviceOrPaymentByDate.length > 0)
+        for(let i = serviceOrPaymentByDate[0].amount ||0; i <= (serviceOrPaymentByDate[0].amount || 0) + difference; i += difference / 10)
         setXLabels( xLabels => [...xLabels, i]);
         
 
@@ -478,12 +496,15 @@ setPayments(c => [...c, currentPayment]);
 
 
         <>
-        <div>
+        <Card sx={{backgroundColor: 'lightblue', padding: '10px', marginBottom: '20px'}}>
             Welcome to Nates Revenue Cycle Management
-        </div>
+        </Card>
         
-      <input onChange={(e) => setFirstNameToSearch(e.currentTarget.value)} />
-      <input onChange={(e) => setLastNameToSearch(e.currentTarget.value)} />
+        <Card sx={{backgroundColor: 'lightblue', padding: '10px', marginBottom: '20px'}}>
+      <TextField variant="outlined" label='First Name' sx={{margin:'20px', backgroundColor:'white', color: 'black'}} onChange={(e) => setFirstNameToSearch(e.currentTarget.value)} />
+      <TextField variant="outlined" label='Last Name' sx={{margin:'20px', backgroundColor:'white', color: 'black'}} onChange={(e) => setLastNameToSearch(e.currentTarget.value)} />
+        </Card>
+        
         <div>
         Look Up Bills By Patient Name
 
